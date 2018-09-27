@@ -29,8 +29,11 @@ wood_1 = 100. # kg / m2
 wood_2 = 70. # kg / m2
 
 length = 650. # meters; domain extends from -length to +length
-# A grid size of 50 x 50 ist much too small to see the correct result. For a better result, set the size to 200 x 200. That computation would, however, be far too long for the Web-based development environment. You may want to run it offline.
-size = 200 # number of points per dimension of the grid
+# A grid size of 50 x 50 ist much too small to see the correct result. For a
+# better result, set the size to 200 x 200. That computation would, however, be
+# far too long for the Web-based development environment. You may want to run
+# it offline.
+size = 50 # number of points per dimension of the grid
 dx = 2. * length / size
 # Pick a time step below the threshold of instability
 h = 0.2 * dx ** 2 / diffusion_coefficient # s
@@ -46,24 +49,20 @@ def wildfire():
     for j in range(0, size):
         for i in range(0, size):
             x, y = grid2physical(i, j)
-            temperatures_old[j][i] = (burn_temperature - ambient_temperature) * \
-                math.exp(-((x + 50.) ** 2 + (y + 250.) ** 2) / (2. * 50. ** 2)) \
+            temperatures_old[j][i] = (burn_temperature - ambient_temperature) \
+                * math.exp(-((x + 50.) ** 2 + (y + 250.) ** 2) / (2. * 50. ** 2)) \
                 + ambient_temperature
-            # Task 2: Replace the following line to fill the array wood_old according to the description, using the values given above.
+            # Task 2: Replace the following line to fill the array wood_old
+            # according to the description, using the values given above.
             # Given:
             # wood_old[j][i] = 100.
 
             # Your code here
-            x,y = grid2physical(i,j)
-            y1 = intercept_1 + x * slope
-            y2 = intercept_2 + x * slope
-            if y < y1:
-                wood_old[j][i] = wood_1
-            elif y < y2:
-                m = (y - y1) / (y2 - y1)
-                wood_old[j][i] = (1.-m) * wood_1 + m * wood_2
-            else: # j >= y2
-                wood_old[j][i] = wood_2
+            x,y = grid2physical(i, j)
+            intercept = y - x * slope
+            w = wood_1 + (wood_2 - wood_1) * (intercept - intercept_1) \
+                / (intercept_2 - intercept_1)
+            wood_old[j][i] = min(wood_1, max(wood_2, w))
 
     temperatures_new = numpy.copy(temperatures_old) # K
     wood_new = numpy.copy(wood_old) # kg / m2
@@ -91,17 +90,17 @@ def wildfire():
                 dT_wind_y = -velocity_y / dx * 0.5 * (
                     temperatures_old[j+1][i]-temperatures_old[j-1][i])
                 dT_wind = dT_wind_x + dT_wind_y
-                # dT_wind = 0.
-                # combustion: increase temperature, decrease wood
-                dW_combustion = 0. if temp < ignition_temperature else -wood_old[j][i] / burn_time_constant
-                dT_combustion = heating_value * -dW_combustion
-                # dT_combustion = 0.
-                # dW_combustion = 0.
-                # heat loss
-                dT_heatloss = (ambient_temperature - temp) / heat_loss_time_constant
-                # dT_heatloss = 0
 
-                temperatures_new[j][i] = temp + h * ( \
+                # combustion: increase temperature, decrease wood
+                dW_combustion = 0. if temp < ignition_temperature else \
+                    -wood_old[j][i] / burn_time_constant
+                dT_combustion = heating_value * -dW_combustion
+
+                # heat loss
+                dT_heatloss = (ambient_temperature - temp) \
+                    / heat_loss_time_constant
+
+                temperatures_new[j][i] = temp + h * (
                     dT_diffusion + dT_wind + dT_combustion + dT_heatloss)
                 wood_new[j][i] = wood_old[j][i] + h * dW_combustion
 
@@ -116,14 +115,16 @@ def fire_plot():
     dimensions = [-length, length, -length, length]
 
     axes = matplotlib.pyplot.subplot(121)
-    matplotlib.pyplot.imshow(temperatures_old, interpolation = 'nearest', cmap = matplotlib.cm.hot, origin = 'lower', extent = dimensions)
+    matplotlib.pyplot.imshow(temperatures_old, interpolation = 'nearest',
+        cmap = matplotlib.cm.hot, origin = 'lower', extent = dimensions)
     matplotlib.pyplot.colorbar()
     axes.set_title('Temperature in K')
     axes.set_xlabel('x in m')
     axes.set_ylabel('y in m')
 
     axes = matplotlib.pyplot.subplot(122)
-    matplotlib.pyplot.imshow(wood_old, cmap = matplotlib.cm.winter, origin = 'lower', extent = dimensions)
+    matplotlib.pyplot.imshow(wood_old,
+        cmap = matplotlib.cm.winter, origin = 'lower', extent = dimensions)
     matplotlib.pyplot.colorbar()
     axes.set_title('Density of wood in kg/m$^2$')
     axes.set_xlabel('x in m')
