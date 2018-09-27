@@ -1,11 +1,12 @@
-### Code copied from other students' repos for compatibility with Udacity jupyter workbooks
+### Code copied from other students' repos for compatibility with Udacity
+### problem set code
 ### Presumably originally from Udacity
 
 import base64
 import json
 import matplotlib, matplotlib.pyplot
 import numpy
-import types 
+import types
 
 def show_plot(width, height=None):
     """
@@ -13,7 +14,7 @@ def show_plot(width, height=None):
     Takes optional parameters (width, height) determining the size of the plot.
     """
     def const_decorator(f):
-        def wrapped_f(*args, **kwargs):        
+        def wrapped_f(*args, **kwargs):
             fig=matplotlib.pyplot.figure(figsize=(width, height))
             ret = f(*args, **kwargs)
             matplotlib.pyplot.show()
@@ -25,7 +26,7 @@ def show_plot(width, height=None):
         return const_decorator(f)
     else:
         return const_decorator
-        
+
 
 def output_image(*args, **kwargs):
     raise NotImplementedError
