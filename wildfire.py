@@ -1,16 +1,16 @@
 # PROBLEM 2
 #
-# This program simulates a wildfire in a square area of forest.  Taking into 
+# This program simulates a wildfire in a square area of forest.  Taking into
 # account diffusion, heat loss, wind, and combustion, use the Forward Euler
 # Method to show how the temperature and wood density at a given location change
-# with time.  Then set up an initial distribution for the wood density.  Pretend 
+# with time.  Then set up an initial distribution for the wood density.  Pretend
 # that the square of forest has infinitesimally thin parallel lines of constant wood
 # density.  These lines all have the same slope, so their y-intercepts can serve
 # as indicators of their respective wood densities.  Please see the question
 # introduction video for more details.
 
 import math
-from udacityplots import * 
+from udacityplots import *
 
 diffusion_coefficient = 5. # m2 / s
 ambient_temperature = 310. # K
@@ -30,7 +30,7 @@ wood_2 = 70. # kg / m2
 
 length = 650. # meters; domain extends from -length to +length
 # A grid size of 50 x 50 ist much too small to see the correct result. For a better result, set the size to 200 x 200. That computation would, however, be far too long for the Web-based development environment. You may want to run it offline.
-size = 50 # number of points per dimension of the grid
+size = 200 # number of points per dimension of the grid
 dx = 2. * length / size
 # Pick a time step below the threshold of instability
 h = 0.2 * dx ** 2 / diffusion_coefficient # s
@@ -52,8 +52,18 @@ def wildfire():
             # Task 2: Replace the following line to fill the array wood_old according to the description, using the values given above.
             # Given:
             # wood_old[j][i] = 100.
-            
+
             # Your code here
+            x,y = grid2physical(i,j)
+            y1 = intercept_1 + x * slope
+            y2 = intercept_2 + x * slope
+            if y < y1:
+                wood_old[j][i] = wood_1
+            elif y < y2:
+                m = (y - y1) / (y2 - y1)
+                wood_old[j][i] = (1.-m) * wood_1 + m * wood_2
+            else: # j >= y2
+                wood_old[j][i] = wood_2
 
     temperatures_new = numpy.copy(temperatures_old) # K
     wood_new = numpy.copy(wood_old) # kg / m2
@@ -64,11 +74,36 @@ def wildfire():
             for i in range(1, size - 1):
                 temp = temperatures_old[j][i]
                 # Task 1: Insert heat diffusion, heat loss, wind, and combustion.
-                # Given:                
+                # Given:
                 # wood_new[j][i] = wood_old[j][i]
                 # temperatures_new[j][i] = temp
-                
+
                 # Your code here
+
+                dT_diffusion = diffusion_coefficient/dx**2 * (
+                    temperatures_old[j-1, i] + temperatures_old[j+1, i]
+                    + temperatures_old[j, i-1] + temperatures_old[j, i+1]
+                    - 4. * temperatures_old[j, i])
+
+                # wind
+                dT_wind_x = -velocity_x / dx * 0.5 * (
+                    temperatures_old[j][i+1]-temperatures_old[j][i-1])
+                dT_wind_y = -velocity_y / dx * 0.5 * (
+                    temperatures_old[j+1][i]-temperatures_old[j-1][i])
+                dT_wind = dT_wind_x + dT_wind_y
+                # dT_wind = 0.
+                # combustion: increase temperature, decrease wood
+                dW_combustion = 0. if temp < ignition_temperature else -wood_old[j][i] / burn_time_constant
+                dT_combustion = heating_value * -dW_combustion
+                # dT_combustion = 0.
+                # dW_combustion = 0.
+                # heat loss
+                dT_heatloss = (ambient_temperature - temp) / heat_loss_time_constant
+                # dT_heatloss = 0
+
+                temperatures_new[j][i] = temp + h * ( \
+                    dT_diffusion + dT_wind + dT_combustion + dT_heatloss)
+                wood_new[j][i] = wood_old[j][i] + h * dW_combustion
 
         temperatures_old, temperatures_new = temperatures_new, temperatures_old
         wood_old, wood_new = wood_new, wood_old
@@ -79,7 +114,7 @@ temperatures_old, wood_old = wildfire()
 @show_plot(12, 4)
 def fire_plot():
     dimensions = [-length, length, -length, length]
-                 
+
     axes = matplotlib.pyplot.subplot(121)
     matplotlib.pyplot.imshow(temperatures_old, interpolation = 'nearest', cmap = matplotlib.cm.hot, origin = 'lower', extent = dimensions)
     matplotlib.pyplot.colorbar()
@@ -94,4 +129,4 @@ def fire_plot():
     axes.set_xlabel('x in m')
     axes.set_ylabel('y in m')
 
-fire_plot()    
+fire_plot()
