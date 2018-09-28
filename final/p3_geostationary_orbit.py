@@ -23,13 +23,18 @@ marker_time = 0.25 * 3600. # s
 tolerance = 100000. # m
 
 # Task 1: Use Section 2.2 and 2.3 to determine the speed of the inital circular orbit.
-initial_radius = # your code here
-initial_speed = # your code here
+initial_radius = earth_radius + 200000
+# orbital_speed is found by setting centripetal force F_c = v^2/r * m_s equal to
+# gravitational force F_g = G * m_1 * m_2 / r^2
+#     v^2 / r * m_s = G * m_s * m_e / r^2
+# =>  v^2 = (G * m_e) / r
+# =>  v = sqrt( G * m_e / r)
+initial_speed = math.sqrt(gravitational_constant * earth_mass / initial_radius)
 final_radius = 42164e3
 
 # Task 3: Which is the appropriate value for the boost in velocity? 2.453, 24.53, 245.3 or 2453. m/s?
 # Change boost to the correct value.
-boost = 42. # m / s
+boost = 2453. # m / s
 
 def acceleration(position):
     return -gravitational_constant * earth_mass / numpy.linalg.norm(position)**3 * position
@@ -57,9 +62,9 @@ def send_to_geostationary():
         # Task 2: When the rocket crosses the negative part of the x axis,
         # fire its engine to increase the speed by the amount given in the variable boost.
 
-        if not boost_done and # fill this in:
-
-            # your code here
+        if not boost_done and positionH[1] < 0.:
+            velocityH += boost * velocityH / numpy.linalg.norm(velocityH)
+            boost_done = True
 
         velocity = velocityH
         position = positionH
